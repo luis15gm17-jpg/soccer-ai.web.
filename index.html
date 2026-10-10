@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101827">
+<meta name="description" content="Analizador de partidos de fútbol con probabilidades estadísticas orientativas.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Soccer AI</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1220;--panel:#151f31;--line:#29364d;--text:#f3f6fb;--muted:#a9b6ca;--accent:#55d6a2;--blue:#76a9ff}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#101827,#09101c 60%);color:var(--text);font:16px system-ui,-apple-system,Segoe UI,sans-serif;padding:18px 14px 38px}
+.wrap{max-width:760px;margin:auto}.brand{display:flex;align-items:center;gap:12px;margin:4px 0 18px}.ball{width:48px;height:48px;border-radius:15px;background:#173b36;display:grid;place-items:center;font-size:27px;border:1px solid #2b6c5a}.brand h1{font-size:25px;margin:0}.sub{color:var(--muted);font-size:13px;margin-top:3px}
+.card{background:rgba(21,31,49,.96);border:1px solid var(--line);border-radius:17px;padding:16px;margin:13px 0;box-shadow:0 8px 24px #0002}
+h2{font-size:17px;margin:0 0 13px}.teams{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:block;color:var(--muted);font-size:12px;margin:9px 0 5px}
+input{width:100%;background:#0c1422;color:var(--text);border:1px solid #35445d;border-radius:10px;padding:12px;font:inherit;min-width:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.scores{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}.scores input{padding:9px 3px;text-align:center}
+button{border:0;background:var(--accent);color:#082218;font-weight:800;font-size:16px;border-radius:12px;padding:14px;width:100%;margin-top:13px}
+.secondary{background:#25334a;color:var(--text);border:1px solid #3b4a63}
+.hint{font-size:12px;color:var(--muted);line-height:1.5}.results{display:none}.metricgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.metric{background:#0c1422;border:1px solid var(--line);border-radius:12px;padding:12px}.metric .k{font-size:12px;color:var(--muted)}.metric .v{font-size:22px;font-weight:800;margin-top:5px}.green{color:var(--accent)}.table{width:100%;border-collapse:collapse;font-size:14px}.table td,.table th{text-align:left;padding:10px 5px;border-bottom:1px solid var(--line)}.table th{color:var(--muted);font-weight:600}.warning{border-left:3px solid #f4c76b;padding-left:10px}.footer{font-size:11px;color:#8e9bb0;text-align:center;margin:18px 0}.top-actions{display:flex;gap:8px}.top-actions button{margin-top:0;flex:1;font-size:13px;padding:11px}.install-note{display:none}.tag{display:inline-block;background:#20374a;color:#a9d4ff;border-radius:30px;padding:4px 9px;font-size:12px}
+@media(max-width:400px){body{padding:12px 10px}.card{padding:13px}.metric .v{font-size:19px}.scores{gap:4px}.scores input{font-size:14px}}
+</style>
+</head>
+<body><main class="wrap">
+<div class="brand"><div class="ball">⚽</div><div><h1>Soccer AI</h1><div class="sub">Analizador de partidos · Modelo Poisson</div></div></div>
+<div class="top-actions"><button class="secondary" id="installBtn" style="display:none">Instalar aplicación</button><button class="secondary" id="resetBtn">Restablecer datos</button></div>
+<div class="card">
+<h2>1. Partido</h2>
+<div class="teams"><div><label>Equipo local</label><input id="home" value="Equipo local"></div><div><label>Equipo visitante</label><input id="away" value="Equipo visitante"></div></div>
+<p class="hint">Captura los goles anotados y recibidos en los últimos 5 partidos de cada equipo. El primer campo es el partido más reciente.</p>
+</div>
+<div class="card">
+<h2>2. Goles anotados — últimos 5 partidos</h2>
+<div class="grid2"><div><label>Local</label><div class="scores" id="homeFor"></div></div><div><label>Visitante</label><div class="scores" id="awayFor"></div></div></div>
+<h2 style="margin-top:18px">3. Goles recibidos — últimos 5 partidos</h2>
+<div class="grid2"><div><label>Local</label><div class="scores" id="homeAgainst"></div></div><div><label>Visitante</label><div class="scores" id="awayAgainst"></div></div></div>
+</div>
+<div class="card">
+<h2>4. Cuotas decimales (opcional)</h2>
+<div class="grid2"><div><label>Gana local</label><input id="oddsH" type="number" min="1.01" step=".01" placeholder="Ej. 2.10"></div><div><label>Empate</label><input id="oddsD" type="number" min="1.01" step=".01" placeholder="Ej. 3.20"></div></div>
+<div><label>Gana visitante</label><input id="oddsA" type="number" min="1.01" step=".01" placeholder="Ej. 3.50"></div>
+<button id="analyzeBtn">ANALIZAR PARTIDO</button>
+<p class="hint">Los datos los introduces tú; no hay conexión automática a resultados en vivo, alineaciones o cuotas de casas de apuestas.</p>
+</div>
+<section class="results" id="results">
+<div class="card"><h2>Resumen del modelo</h2><div class="metricgrid" id="metrics"></div></div>
+<div class="card"><h2>Probabilidades de resultado</h2><table class="table"><thead><tr><th>Mercado</th><th>Probabilidad</th><th>Cuota justa</th></tr></thead><tbody id="markets"></tbody></table><div id="evbox"></div></div>
+<div class="card"><h2>Otros mercados</h2><table class="table"><thead><tr><th>Mercado</th><th>Probabilidad</th><th>Cuota justa</th></tr></thead><tbody id="other"></tbody></table></div>
+<div class="card"><h2>Marcadores más probables</h2><table class="table"><thead><tr><th>Marcador</th><th>Probabilidad estimada</th></tr></thead><tbody id="scoresOut"></tbody></table></div>
+<div class="card"><h2>Cómo interpretar</h2><p class="hint warning">La cuota justa es 1 ÷ probabilidad. Una cuota ofrecida por encima de la justa puede representar valor teórico, pero la estimación puede fallar y las cuotas incluyen margen de la casa.</p><p class="hint">No apuestes dinero que necesites. Evita perseguir pérdidas; ninguna selección es segura.</p></div>
+</section>
+<div class="footer">Soccer AI · Versión web instalable · Análisis orientativo, sin datos en vivo</div>
+</main>
+<script>
+const defaults={homeFor:[2,1,2,0,1],awayFor:[1,2,0,1,1],homeAgainst:[0,1,1,2,0],awayAgainst:[1,1,2,0,2]};
+function makeInputs(id,values){const el=document.getElementById(id);values.forEach((v,i)=>{const x=document.createElement('input');x.type='number';x.min='0';x.max='15';x.step='1';x.value=v;x.id=id+i;x.setAttribute('aria-label',id+' partido '+(i+1));el.appendChild(x)})}
+Object.entries(defaults).forEach(([id,v])=>makeInputs(id,v));
+function vals(id){return Array.from({length:5},(_,i)=>Math.max(0,Math.min(15,Number(document.getElementById(id+i).value)||0)))}
+function avg(a){return a.reduce((x,y)=>x+y,0)/a.length}
+function poisson(k,l){return Math.exp(-l)*Math.pow(l,k)/fact(k)}
+function fact(n){let x=1;for(let i=2;i<=n;i++)x*=i;return x}
+function pct(p){return (100*p).toFixed(1)+'%'}
+function fair(p){return p>0?(1/p).toFixed(2):'—'}
+function row(name,p){return `<tr><td>${name}</td><td>${pct(p)}</td><td>${fair(p)}</td></tr>`}
+function analyze(){
+ const h=document.getElementById('home').value.trim()||'Local', a=document.getElementById('away').value.trim()||'Visitante';
+ const hf=vals('homeFor'),ha=vals('homeAgainst'),af=vals('awayFor'),aa=vals('awayAgainst');
+ const xh=Math.max(.15,(avg(hf)+avg(aa))/2+.20), xa=Math.max(.15,(avg(af)+avg(ha))/2-.10);
+ const ph=[],pa=[];for(let i=0;i<=10;i++){ph.push(poisson(i,xh));pa.push(poisson(i,xa))}
+ let win=0,draw=0,lose=0,over15=0,over25=0,over35=0,btts=0;const scoreList=[];
+ for(let i=0;i<=10;i++)for(let j=0;j<=10;j++){const p=ph[i]*pa[j];if(i>j)win+=p;else if(i===j)draw+=p;else lose+=p;if(i+j>=2)over15+=p;if(i+j>=3)over25+=p;if(i+j>=4)over35+=p;if(i>0&&j>0)btts+=p;scoreList.push({s:`${i} - ${j}`,p})}
+ const under25=1-over25, noBtts=1-btts, dc1=win+draw, dc2=lose+draw, dc12=win+lose;
+ document.getElementById('metrics').innerHTML=`<div class="metric"><div class="k">Goles esperados · ${h}</div><div class="v green">${xh.toFixed(2)}</div></div><div class="metric"><div class="k">Goles esperados · ${a}</div><div class="v green">${xa.toFixed(2)}</div></div><div class="metric"><div class="k">Total esperado</div><div class="v">${(xh+xa).toFixed(2)}</div></div><div class="metric"><div class="k">Tendencia del modelo</div><div class="v">${win>lose?h:lose>win?a:'Parejo'}</div></div>`;
+ document.getElementById('markets').innerHTML=row(`Gana ${h}`,win)+row('Empate',draw)+row(`Gana ${a}`,lose);
+ document.getElementById('other').innerHTML=row('Doble oportunidad 1X',dc1)+row('Doble oportunidad X2',dc2)+row('Doble oportunidad 12',dc12)+row('Más de 1.5 goles',over15)+row('Más de 2.5 goles',over25)+row('Menos de 2.5 goles',under25)+row('Más de 3.5 goles',over35)+row('Ambos anotan — Sí',btts)+row('Ambos anotan — No',noBtts);
+ const odds=[Number(document.getElementById('oddsH').value),Number(document.getElementById('oddsD').value),Number(document.getElementById('oddsA').value)],ps=[win,draw,lose],names=[h+' gana','Empate',a+' gana'];let ev='';
+ if(odds.some(o=>o>1)){ev='<h2 style="margin-top:18px">Valor teórico con las cuotas capturadas</h2><table class="table"><tr><th>Selección</th><th>Cuota</th><th>EV estimado</th></tr>'+odds.map((o,i)=>o>1?`<tr><td>${names[i]}</td><td>${o.toFixed(2)}</td><td class="${ps[i]*o-1>0?'green':''}">${((ps[i]*o-1)*100).toFixed(1)}%</td></tr>`:'').join('')+'</table><p class="hint">EV aproximado = probabilidad del modelo × cuota − 1. No es una ganancia garantizada.</p>'}
+ document.getElementById('evbox').innerHTML=ev;
+ document.getElementById('scoresOut').innerHTML=scoreList.sort((x,y)=>y.p-x.p).slice(0,8).map(x=>`<tr><td>${x.s}</td><td>${pct(x.p)}</td></tr>`).join('');
+ const r=document.getElementById('results');r.style.display='block';r.scrollIntoView({behavior:'smooth',block:'start'});
+}
+document.getElementById('analyzeBtn').addEventListener('click',analyze);
+document.getElementById('resetBtn').addEventListener('click',()=>{Object.entries(defaults).forEach(([id,v])=>v.forEach((n,i)=>document.getElementById(id+i).value=n));document.getElementById('home').value='Equipo local';document.getElementById('away').value='Equipo visitante';['oddsH','oddsD','oddsA'].forEach(id=>document.getElementById(id).value='');document.getElementById('results').style.display='none';window.scrollTo({top:0,behavior:'smooth'})});
+let installPrompt;const installBtn=document.getElementById('installBtn');
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;installBtn.style.display='block'});
+installBtn.addEventListener('click',async()=>{if(!installPrompt){alert('En Chrome, abre el menú ⋮ y elige “Instalar aplicación” o “Añadir a pantalla de inicio”.');return}installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;installBtn.style.display='none'});
+if('serviceWorker' in navigator && location.protocol.startsWith('http')) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+</script>
+</body></html>

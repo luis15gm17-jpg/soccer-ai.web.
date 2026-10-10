@@ -1,0 +1,16 @@
+{
+  "id": "./",
+  "name": "Soccer AI - Analizador de fútbol",
+  "short_name": "Soccer AI",
+  "description": "Análisis estadístico orientativo de partidos de fútbol.",
+  "lang": "es-MX",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b1220",
+  "theme_color": "#101827",
+  "icons": [
+    {"src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
+  ]
+}
